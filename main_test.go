@@ -11,20 +11,23 @@ func TestNew(t *testing.T) {
 
 	life := ergotree.New[string](nil)
 
-	primates := life.Spawn("Primates")
-	apes := primates.Spawn("Apes")
-	greatApes := apes.Spawn("Great Apes")
+	greatApes := life.Spawn("Primates").Spawn("Apes").Spawn("Great Apes")
+
 	greatApes.Set("Eastern Gorilla")
-	//greatApes.Set("Western Gorilla")
+	greatApes.Set("Western Gorilla")
 
 	got := life.Walk()
 
 	want := [][]string{
 		{"Primates", "Apes", "Great Apes", "Eastern Gorilla"},
-		//{"Primates", "Apes", "Great Apes", "Western Gorilla"},
+		{"Primates", "Apes", "Great Apes", "Western Gorilla"},
 	}
 
-	if !reflect.DeepEqual(got, want) {
+	if !(reflect.DeepEqual(got[0], want[0]) || reflect.DeepEqual(got[0], want[1])) {
+		t.Errorf("got %v but wanted %v", got, want)
+	}
+
+	if !(reflect.DeepEqual(got[1], want[0]) || reflect.DeepEqual(got[1], want[1])) {
 		t.Errorf("got %v but wanted %v", got, want)
 	}
 

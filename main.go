@@ -40,12 +40,6 @@ func (t *node[K]) IsTerminal() bool {
 	return lengthOfMap == 1
 }
 
-// // SetParent allows a Node to know who it's parent is
-// func (t *node[K]) SetParent(parent Node[K]) {
-// 	var zerok K
-// 	(*t)[zerok] = parent
-// }
-
 // RemoveChild removes a child Node
 func (t *node[K]) RemoveChild(key K) {
 	delete(*t, key)
