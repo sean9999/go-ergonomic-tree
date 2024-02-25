@@ -1,7 +1,8 @@
 package ergotree
 
 import (
-	"errors"
+	"encoding/json"
+	"fmt"
 	"slices"
 )
 
@@ -14,18 +15,18 @@ type Node[K comparable] interface {
 	Walk() [][]K
 	Ancestry() []K
 	IsTerminal() bool
-	Set(K, Node[K]) error
+	Set(K)
 	Get(K) (Node[K], bool)
+	SetParent(Node[K])
+	fmt.Stringer
 }
 
 // node implements Node
 type node[K comparable] map[K]Node[K]
 
-// Spawn creates and returns a child Node
-func (t *node[K]) Spawn(key K) Node[K] {
-	child := New(t)
-	t.Set(key, child)
-	return child
+func (t *node[K]) SetParent(p Node[K]) {
+	var zerok K
+	(*t)[zerok] = p
 }
 
 // IsTerminal returns true if the Node contains no child Nodes
@@ -36,7 +37,7 @@ func (t *node[K]) IsTerminal() bool {
 	if lengthOfMap == 0 {
 		panic("length of map should never be zero")
 	}
-	return len(*t) == 1
+	return lengthOfMap == 1
 }
 
 // // SetParent allows a Node to know who it's parent is
@@ -100,32 +101,44 @@ func (t *node[K]) Ancestry() []K {
 func (t *node[K]) Walk() [][]K {
 	things := [][]K{}
 	var acc func(Node[K])
+
 	acc = func(tree Node[K]) {
-		for _, subTree := range t.Children() {
-			if subTree.IsTerminal() {
+		for _, subTree := range tree.Children() {
+
+			switch {
+			case subTree == nil:
+				// do nothing
+			case subTree.IsTerminal():
 				things = append(things, subTree.Ancestry())
-			} else {
+			default:
 				acc(subTree)
 			}
+
 		}
 	}
+
 	acc(t)
 	return things
 }
 
-// Set sets a value on the map
-func (t *node[K]) Set(key K, val Node[K]) error {
-	var err error
-	var zerok K
-	if key == zerok {
-		err = errors.New("cannot use the zero value as a key. That's reserved")
-	} else {
-		if !val.IsTerminal() {
-			setParent[K](val.(*node[K]), t)
-		}
-		(*t)[key] = val
+func (t *node[K]) String() string {
+	j, err := json.Marshal(t.Walk())
+	if err != nil {
+		panic(err)
 	}
-	return err
+	return string(j)
+}
+
+// Spawn creates and returns a child Node
+func (t *node[K]) Spawn(key K) Node[K] {
+	child := New(t)
+	(*t)[key] = child
+	return child
+}
+
+// Set simply calls Spawn(), but discards return value
+func (t *node[K]) Set(key K) {
+	t.Spawn(key)
 }
 
 // Get gets the value from the map
@@ -148,7 +161,7 @@ func (t *node[K]) Children() map[K]Node[K] {
 
 // New is a constructor
 func New[K comparable](parent Node[K]) Node[K] {
-	me := new(node[K])
-	setParent[K](me, parent.(*node[K]))
+	me := &node[K]{}
+	me.SetParent(parent)
 	return me
 }
