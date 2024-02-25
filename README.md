@@ -23,20 +23,20 @@ import (
 
 func TestErgonomicTree(t *testing.T) {
 
-    //  create a tree
+	//  create a tree
 	life := ergotree.New[string](nil)
-	
-    //  create some children
-    greatApes := life.Spawn("Primates").Spawn("Apes").Spawn("Great Apes")
-	
-    //  create some leaf nodes
-    greatApes.Set("Western Gorilla")
-    greatApes.Set("Eastern Gorilla")
 
-    //  walk the whole tree, returning full paths to all leaf nodes
+	//  create some children
+	greatApes := life.Spawn("Primates").Spawn("Apes").Spawn("Great Apes")
+
+	//  create some leaf nodes
+	greatApes.Set("Western Gorilla")
+	greatApes.Set("Eastern Gorilla")
+
+	//  walk the whole tree, returning full paths to all leaf nodes
 	got := life.Walk()
 
-    //  check the data
+	//  check the data
 	want := [][]string{
 		{"Primates", "Apes", "Great Apes", "Eastern Gorilla"},
 		{"Primates", "Apes", "Great Apes", "Western Gorilla"},
@@ -49,4 +49,5 @@ func TestErgonomicTree(t *testing.T) {
 	}
 
 }
+
 ```
