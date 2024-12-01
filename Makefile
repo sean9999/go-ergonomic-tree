@@ -14,7 +14,7 @@ clean:
 	go clean
 
 publish:
-	GOPROXY=${GOPROXY} list -m ${REPO}@${SEMVER}
+	GOPROXY=${GOPROXY} go list -m ${REPO}@${SEMVER}
 
 test:
 	go test ./...
