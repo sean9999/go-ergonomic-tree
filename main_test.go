@@ -1,21 +1,25 @@
 package ergotree_test
 
 import (
-	"reflect"
+	"slices"
 	"testing"
 
-	ergotree "github.com/sean9999/go-ergonomic-tree"
+	tree "github.com/sean9999/go-ergonomic-tree"
 )
 
 func TestNew(t *testing.T) {
 
-	life := ergotree.New[string](nil)
+	//	life is the root node of the tree of life
+	life := tree.New[string](nil)
 
+	//	Great Apes descend from Apes, which descend from Primates
 	greatApes := life.Spawn("Primates").Spawn("Apes").Spawn("Great Apes")
 
-	greatApes.Set("Eastern Gorilla")
-	greatApes.Set("Western Gorilla")
+	//	Eastern and Western Gorilla are each distinct species which descend from Great Apes
+	greatApes.Spawn("Eastern Gorilla")
+	greatApes.Spawn("Western Gorilla")
 
+	//	walk the tree of life (depth first)
 	got := life.Walk()
 
 	want := [][]string{
@@ -23,11 +27,12 @@ func TestNew(t *testing.T) {
 		{"Primates", "Apes", "Great Apes", "Western Gorilla"},
 	}
 
-	if !(reflect.DeepEqual(got[0], want[0]) || reflect.DeepEqual(got[0], want[1])) {
+	//	we cannot be guratantted in which order we get trees of the branch
+	//	since our backing data structure is a map
+	if slices.Compare(want[0], got[0]) != 0 && slices.Compare(want[1], got[0]) != 0 {
 		t.Errorf("got %v but wanted %v", got, want)
 	}
-
-	if !(reflect.DeepEqual(got[1], want[0]) || reflect.DeepEqual(got[1], want[1])) {
+	if slices.Compare(want[0], got[1]) != 0 && slices.Compare(want[1], got[1]) != 0 {
 		t.Errorf("got %v but wanted %v", got, want)
 	}
 

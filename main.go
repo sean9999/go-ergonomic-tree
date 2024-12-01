@@ -2,35 +2,23 @@ package ergotree
 
 import (
 	"encoding/json"
-	"fmt"
 	"slices"
 )
 
-type Node[K comparable] interface {
-	Data() K
-	Children() map[K]Node[K]
-	Spawn(K) Node[K]
-	RemoveChild(K)
-	Parent() Node[K]
-	Walk() [][]K
-	Ancestry() []K
-	IsTerminal() bool
-	Set(K)
-	Get(K) (Node[K], bool)
-	SetParent(Node[K])
-	fmt.Stringer
-}
+type Node[K comparable] map[K]*Node[K]
 
-// node implements Node
-type node[K comparable] map[K]Node[K]
+//	a Node is a Tree is a Node
+// GOEXPERIMENT=aliastypeparams
+//type Tree[K comparable] = Node[K]
 
-func (t *node[K]) SetParent(p Node[K]) {
+func (t *Node[K]) SetParent(p *Node[K]) {
 	var zerok K
 	(*t)[zerok] = p
 }
 
 // IsTerminal returns true if the Node contains no child Nodes
-func (t *node[K]) IsTerminal() bool {
+func (t *Node[K]) IsTerminal() bool {
+
 	// if length of map is 1, that means it only contains a pointer to it's parent. Nothing else
 	// length should never be zero, even for the root node, whose parent is nil
 	lengthOfMap := len(*t)
@@ -41,18 +29,18 @@ func (t *node[K]) IsTerminal() bool {
 }
 
 // RemoveChild removes a child Node
-func (t *node[K]) RemoveChild(key K) {
+func (t *Node[K]) RemoveChild(key K) {
 	delete(*t, key)
 }
 
 // basic equality check
-func (t *node[K]) Equals(t2 Node[K]) bool {
-	return t == t2.(*node[K])
+func (t *Node[K]) Equals(t2 *Node[K]) bool {
+	return t == t2
 }
 
 // get key of self by querying parent
 // zero value means root (no key)
-func (t *node[K]) Data() K {
+func (t *Node[K]) Data() K {
 	var magicKey K
 	parent := t.Parent()
 	if parent != nil {
@@ -66,16 +54,16 @@ func (t *node[K]) Data() K {
 }
 
 // Parent returns a Node's parent
-func (t *node[K]) Parent() Node[K] {
+func (t *Node[K]) Parent() *Node[K] {
 	var zerok K
 	return (*t)[zerok]
 }
 
 // returns a slice of []K, indicating the path to the Node
-func (t *node[K]) Ancestry() []K {
+func (t *Node[K]) Ancestry() []K {
 	var zerok K
 	ancestry := []K{}
-	ancestor := Node[K](t)
+	ancestor := t
 	for {
 		if ancestor == nil {
 			break
@@ -92,11 +80,11 @@ func (t *node[K]) Ancestry() []K {
 }
 
 // Walk returns all leaf nodes as ancestries
-func (t *node[K]) Walk() [][]K {
+func (t *Node[K]) Walk() [][]K {
 	things := [][]K{}
-	var acc func(Node[K])
+	var acc func(*Node[K])
 
-	acc = func(tree Node[K]) {
+	acc = func(tree *Node[K]) {
 		for _, subTree := range tree.Children() {
 
 			switch {
@@ -115,7 +103,7 @@ func (t *node[K]) Walk() [][]K {
 	return things
 }
 
-func (t *node[K]) String() string {
+func (t *Node[K]) String() string {
 	j, err := json.Marshal(t.Walk())
 	if err != nil {
 		panic(err)
@@ -124,27 +112,27 @@ func (t *node[K]) String() string {
 }
 
 // Spawn creates and returns a child Node
-func (t *node[K]) Spawn(key K) Node[K] {
+func (t *Node[K]) Spawn(key K) *Node[K] {
 	child := New(t)
 	(*t)[key] = child
 	return child
 }
 
 // Set simply calls Spawn(), but discards return value
-func (t *node[K]) Set(key K) {
+func (t *Node[K]) Set(key K) {
 	t.Spawn(key)
 }
 
 // Get gets the value from the map
-func (t *node[K]) Get(key K) (Node[K], bool) {
+func (t *Node[K]) Get(key K) (*Node[K], bool) {
 	val, ok := (*t)[key]
 	return val, ok
 }
 
 // Children returns the map, omiting the special "parent" entry
-func (t *node[K]) Children() map[K]Node[K] {
+func (t *Node[K]) Children() map[K]*Node[K] {
 	var zerok K
-	children := map[K]Node[K]{}
+	children := map[K]*Node[K]{}
 	for k, v := range *t {
 		if k != zerok {
 			children[k] = v
@@ -154,8 +142,8 @@ func (t *node[K]) Children() map[K]Node[K] {
 }
 
 // New is a constructor
-func New[K comparable](parent Node[K]) Node[K] {
-	me := &node[K]{}
+func New[K comparable](parent *Node[K]) *Node[K] {
+	me := &Node[K]{}
 	me.SetParent(parent)
 	return me
 }
